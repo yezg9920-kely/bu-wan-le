@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Chart colors -->
+    <color name="chart_purple">#FF6200EE</color>
+    <color name="chart_teal">#FF03DAC5</color>
+    <color name="chart_orange">#FFFF8A65</color>
+    <color name="chart_pink">#FFF06292</color>
+    <color name="chart_blue">#FF42A5F5</color>
+    <color name="chart_gray">#FFBDBDBD</color>
+    <color name="chart_grid">#FFE0E0E0</color>
+    <color name="chart_text">#FF616161</color>
+    <color name="positive_green">#FF4CAF50</color>
+    <color name="negative_red">#FFF44336</color>
+    <color name="card_bg_light">#FFF3E5F5</color>
+</resources>

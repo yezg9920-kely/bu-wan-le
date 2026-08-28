@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <!-- 正常选择页 -->
+    <ScrollView
+        android:id="@+id/layoutNormal"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp">
+
+        <TextView
+            android:id="@+id/tvAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="你确定要继续刷短视频吗？"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvTodayStats"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="今天你已经打开了 0 次"
+            android:textSize="14sp"
+            android:textColor="?attr/colorError"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvDeepQuestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="16sp"
+            android:textStyle="italic"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:paddingHorizontal="8dp"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. 此刻你更应该做什么？"
+            android:textStyle="bold"
+            android:layout_gravity="start"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupMood"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            android:layout_marginBottom="24dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_tired"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😫 本该休息/睡觉" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_annoyed"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😤 有正事没做完" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_escape"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😶‍🌫️ 想逃避现实" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_research"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔍 假装在学习" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_itchy"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👆 就是忍不住" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. 上一次刷完后，你感觉？"
+            android:textStyle="bold"
+            android:layout_gravity="start"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupIntent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            android:layout_marginBottom="24dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_relax"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="并没有更放松" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_info"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="信息早就忘了" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_inspiration"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="灵感一个没留住" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_unconscious"
+                style="@style/Widget.MaterialComponents.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="时间莫名其妙没了" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3. 本次时长"
+            android:textStyle="bold"
+            android:layout_gravity="start"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupDuration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true"
+            android:layout_marginBottom="32dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_5min"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5 分钟" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_10min"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10 分钟" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_15min"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="15 分钟" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:id="@+id/tvCountdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="请停留 15 秒，再想想..."
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="8dp" />
+
+        <ProgressBar
+            android:id="@+id/progressCountdown"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:max="15000"
+            android:progress="0"
+            android:layout_marginBottom="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="15秒后再想想..."
+            android:enabled="false"
+            android:textSize="16sp"
+            app:cornerRadius="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelGate"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="现在不刷，回到桌面"
+            android:textSize="15sp"
+            app:cornerRadius="24dp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 二次确认页 -->
+    <LinearLayout
+        android:id="@+id/layoutDoubleConfirm"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"
+        android:background="?android:attr/colorBackground">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚠️ 等一等"
+            android:textSize="32sp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvDoubleConfirmMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="你已经连续多次无意识打开"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:layout_marginBottom="32dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDoubleConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="我确认，确实想打开"
+            android:textSize="16sp"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+
+    <!-- 阻断页 -->
+    <LinearLayout
+        android:id="@+id/layoutBlock"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"
+        android:background="?android:attr/colorBackground">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🛑 暂停一下"
+            android:textSize="32sp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/tvBlockMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="触发阻断规则"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:layout_marginBottom="32dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBlockOk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="我知道了，回桌面"
+            android:textSize="16sp"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+</FrameLayout>

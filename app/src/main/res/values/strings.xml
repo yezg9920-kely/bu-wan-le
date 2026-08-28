@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">不玩了</string>
+    <string name="accessibility_service_description">不玩了 需要检测你何时打开短视频 App，以便弹出意图确认和定时提醒。不会读取你的屏幕内容，只检测应用切换事件。</string>
+</resources>
