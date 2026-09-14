@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "FocusGate"
+rootProject.name = "Buwanle"
 include(":app")

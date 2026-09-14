@@ -1,8 +1,8 @@
-# 不玩了（FocusGate）
+# 不玩了
 
 一款本地优先的 Android 短视频自控工具。打开受控应用时，它会先覆盖目标内容，让你确认当下状态、使用目的和计划时长；时间到后再次全屏提醒，帮助你把“无意识刷视频”变成一次有边界的选择。
 
-当前版本：`1.4.7`（`versionCode 13`）
+当前版本：社区版 `2.0.0-beta`；旧安装迁移桥接版 `1.4.8`。
 
 > 这是个人开源项目，不是家长控制、企业设备管理或不可绕过的系统级封禁工具。用户可以随时关闭无障碍服务或卸载应用。
 
@@ -10,12 +10,17 @@
 
 前往仓库的 [Releases](../../releases) 页面下载 APK。
 
-GitHub Release 中的 APK 是使用 Android 默认调试证书生成的社区测试版，方便体验和更新当前测试安装；它不等同于应用商店正式签名包。Android 可能提示“未知来源”，请只从本仓库下载，并核对 Release 页面提供的 SHA-256。
+GitHub Release 提供两种 APK：
+
+- `community`：包名 `io.github.yezg9920kely.buwanle`，可与旧版同时安装；
+- `legacyBridge`：包名 `com.focusgate.app`，只用于覆盖旧安装并导出历史。Android 只允许签名一致的 APK 覆盖安装，签名不一致时请保留旧安装并先从旧版导出数据。
+
+测试 APK 使用测试证书，不等同于应用商店正式签名包。请只从本仓库下载并核对 Release 页面提供的 SHA-256。
 
 首次使用：
 
 1. 安装并打开“不玩了”。
-2. 点击“开启无障碍服务”，在系统设置中找到 FocusGate 并授权。
+2. 阅读并同意隐私说明，然后点击“开启无障碍服务”，阅读单独的醒目说明后在系统设置中找到“不玩了”并授权。
 3. 建议允许通知、后台运行/自启动，并关闭针对本应用的省电限制。
 4. 打开受控应用，检查是否出现 15 秒暂停与意图确认界面。
 
@@ -28,6 +33,7 @@ GitHub Release 中的 APK 是使用 Android 默认调试证书生成的社区测
 - 支持“再使用 5 分钟”、结束使用和返回桌面。
 - 本地记录当日、近 7 天、近 30 天趋势与行为复盘，可在应用内清空。
 - 服务重连与进程恢复后尽量恢复未完成会话和原定截止时间。
+- 历史记录已迁移到 Room；支持通过系统文件选择器导出/导入口令加密的数据包。
 
 当前内置目标：
 
@@ -39,7 +45,7 @@ GitHub Release 中的 APK 是使用 Android 默认调试证书生成的社区测
 
 ## 隐私与权限
 
-当前版本没有申请联网权限，也没有广告、账号、云同步或第三方分析 SDK。状态、意图、时间和复盘记录保存在本机应用私有空间。完整说明见 [PRIVACY.md](PRIVACY.md)。
+社区版没有申请联网权限，也没有广告、账号、云同步或第三方分析 SDK。状态、意图、时间和复盘记录保存在本机应用私有空间。完整说明见 [PRIVACY.md](PRIVACY.md)。
 
 | 权限/能力 | 是否必要 | 用途 |
 | --- | --- | --- |
@@ -66,7 +72,7 @@ GitHub Release 中的 APK 是使用 Android 默认调试证书生成的社区测
 Windows：
 
 ```powershell
-.\gradlew.bat testDebugUnitTest lintDebug assembleDebug
+.\gradlew.bat testCommunityDebugUnitTest testLegacyBridgeDebugUnitTest lintCommunityDebug assembleCommunityDebug assembleLegacyBridgeDebug
 ```
 
 Windows 上建议把仓库放在不含中文字符的路径中；当前 Gradle/JUnit 组合在部分中文路径下可能出现测试类已编译但测试进程无法加载的问题。
@@ -74,14 +80,14 @@ Windows 上建议把仓库放在不含中文字符的路径中；当前 Gradle/J
 macOS / Linux：
 
 ```bash
-./gradlew testDebugUnitTest lintDebug assembleDebug
+./gradlew testCommunityDebugUnitTest testLegacyBridgeDebugUnitTest lintCommunityDebug assembleCommunityDebug assembleLegacyBridgeDebug
 ```
 
-APK 生成于 `app/build/outputs/apk/debug/app-debug.apk`。
+APK 分别生成于 `app/build/outputs/apk/community/debug/` 与 `app/build/outputs/apk/legacyBridge/debug/`。正式签名配置见 [SIGNING.md](SIGNING.md)。
 
 ## 参与贡献
 
-Bug 修复、适配新机型、完善测试和体验改进都欢迎提交。开始前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [SECURITY.md](SECURITY.md)。
+Bug 修复、适配新机型、完善测试和体验改进都欢迎提交。开始前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)、[CLA.md](CLA.md) 与 [SECURITY.md](SECURITY.md)。
 
 ## 开源许可
 
@@ -91,7 +97,7 @@ Bug 修复、适配新机型、完善测试和体验改进都欢迎提交。开�
 
 微信：`a1870621985`
 
-请注明“不玩了 / FocusGate”。公开 Issue 更适合一般 Bug 和功能建议；安全问题请按 [SECURITY.md](SECURITY.md) 私下联系。
+请注明“不玩了”。公开 Issue 更适合一般 Bug 和功能建议；安全问题请按 [SECURITY.md](SECURITY.md) 私下联系。
 
 ## 商标声明
 

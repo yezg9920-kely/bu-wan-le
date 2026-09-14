@@ -9,9 +9,9 @@ import java.util.Locale
  * 运行时日志收集器：把所有关键决策和事件写入内存环状缓冲区，
  * 方便用户一键复制发给我们诊断。
  */
-object FocusGateLogger {
+object BuwanleLogger {
 
-    private const val TAG = "FocusGateLog"
+    private const val TAG = "BuwanleLog"
     private const val MAX_LINES = 600
     private val buffer = ArrayDeque<String>(MAX_LINES)
     private val timeFmt = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())

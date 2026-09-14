@@ -15,15 +15,16 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="FocusGate"
+        android:text="不玩了"
         android:textSize="28sp"
         android:textStyle="bold"
         android:layout_marginBottom="4dp" />
 
     <TextView
+        android:id="@+id/tvVersion"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="短视频自控助手"
+        android:text="短视频自控与专注"
         android:textSize="14sp"
         android:layout_marginBottom="24dp" />
 
@@ -266,11 +267,79 @@
         android:text="📊 查看历史复盘"
         android:layout_marginBottom="8dp" />
 
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="数据迁移与备份"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="备份使用口令加密，不包含账号令牌或未结束会话。请妥善保存口令。"
+                android:textSize="12sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExportData"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="加密导出数据" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnImportData"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="导入加密备份" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPrivacy"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="隐私政策" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTerms"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="用户协议" />
+    </LinearLayout>
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnClearData"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="清空测试数据"
+        android:text="清空本地历史"
         style="@style/Widget.MaterialComponents.Button.TextButton" />
 
     <com.google.android.material.button.MaterialButton

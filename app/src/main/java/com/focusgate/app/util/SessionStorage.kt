@@ -4,63 +4,53 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.focusgate.app.Constants
 import com.focusgate.app.data.AppSession
-import com.focusgate.app.data.IntentType
-import com.focusgate.app.data.MoodType
-import com.focusgate.app.rule.ReminderIntensity
+import com.focusgate.app.data.local.BuwanleDatabase
+import com.focusgate.app.data.local.SessionEntity
 import com.focusgate.app.service.SessionRecoveryPolicy
-import org.json.JSONArray
 import org.json.JSONObject
 
 class SessionStorage(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
+    private val sessionDao = BuwanleDatabase.get(context).sessionDao()
 
     companion object {
         private const val KEY_SESSIONS = "sessions"
+        private const val KEY_ROOM_MIGRATED = "sessions_room_migrated_v1"
         private const val ACTIVE_SESSION_BUFFER_MINUTES = 5
         private val STORAGE_LOCK = Any()
     }
 
     init {
+        migrateLegacySessionsOnce()
         repairStaleOpenSessions()
     }
 
     /** 保存一个会话 */
     fun saveSession(session: AppSession) {
         synchronized(STORAGE_LOCK) {
-            val list = readSessions().toMutableList()
-            list.add(session.copy())
-            prefs.edit().putString(KEY_SESSIONS, serialize(list)).commit()
+            sessionDao.upsert(SessionEntity.fromDomain(session.copy()))
         }
     }
 
     /** 更新最后一个未结束的会话 */
     fun closeLastSession(packageName: String, subTarget: String?, endTime: Long) {
         synchronized(STORAGE_LOCK) {
-            val list = readSessions().toMutableList()
-            val idx = list.indexOfLast {
-                it.packageName == packageName && it.subTarget == subTarget && it.endTime == null
-            }
-            if (idx >= 0) {
-                list[idx] = list[idx].copy(endTime = endTime)
-                prefs.edit().putString(KEY_SESSIONS, serialize(list)).commit()
-            }
+            val entity = sessionDao.findLatestOpen(packageName, subTarget.orEmpty()) ?: return
+            sessionDao.update(entity.copy(endTime = endTime))
         }
     }
 
     /** 将延长后的时长等字段同步回最后一个未结束会话。 */
     fun updateLastOpenSession(session: AppSession) {
         synchronized(STORAGE_LOCK) {
-            val list = readSessions().toMutableList()
-            val idx = list.indexOfLast {
-                it.packageName == session.packageName &&
-                    it.subTarget == session.subTarget &&
-                    it.endTime == null
-            }
-            if (idx >= 0) {
-                list[idx] = session.copy()
-                prefs.edit().putString(KEY_SESSIONS, serialize(list)).commit()
-            }
+            val entity = sessionDao.findLatestOpen(session.packageName, session.subTarget.orEmpty())
+                ?: return
+            sessionDao.update(SessionEntity.fromDomain(session).copy(
+                packageName = entity.packageName,
+                subTargetKey = entity.subTargetKey,
+                startTime = entity.startTime
+            ))
         }
     }
 
@@ -108,8 +98,8 @@ class SessionStorage(context: Context) {
                 }
             }
             if (repaired > 0) {
-                prefs.edit().putString(KEY_SESSIONS, serialize(list)).commit()
-                FocusGateLogger.log("SESSION_REPAIR", "已修复 $repaired 条异常未结束会话")
+                list.forEach { sessionDao.upsert(SessionEntity.fromDomain(it)) }
+                BuwanleLogger.log("SESSION_REPAIR", "已修复 $repaired 条异常未结束会话")
             }
             return repaired
         }
@@ -137,7 +127,9 @@ class SessionStorage(context: Context) {
 
     /** 获取指定时间范围内的会话 */
     fun getSessionsBetween(startMs: Long, endMs: Long): List<AppSession> {
-        return getAllSessions().filter { it.startTime in startMs..endMs }
+        return synchronized(STORAGE_LOCK) {
+            sessionDao.getBetween(startMs, endMs).map(SessionEntity::toDomain)
+        }
     }
 
     /** 获取某天的0点毫秒时间 */
@@ -187,38 +179,41 @@ class SessionStorage(context: Context) {
     /** 清空数据（调试用） */
     fun clear() {
         synchronized(STORAGE_LOCK) {
-            prefs.edit().remove(KEY_SESSIONS).commit()
+            sessionDao.deleteAll()
         }
     }
 
-    private fun serialize(sessions: List<AppSession>): String {
-        val arr = JSONArray()
-        sessions.forEach { s ->
-            arr.put(JSONObject().apply {
-                put("pkg", s.packageName)
-                put("start", s.startTime)
-                put("end", s.endTime ?: -1)
-                put("intent", s.intentType.name)
-                put("plan", s.plannedDurationMinutes)
-                put("enforced", s.enforcedDurationMinutes ?: -1)
-                put("intensity", s.reminderIntensity.name)
-                put("double", s.doubleConfirmed)
-                put("subTarget", s.subTarget ?: "")
-                put("blocked", s.blockedByRule ?: "")
-                put("mood", s.mood?.name ?: "")
-            })
+    /** 合并导入的已结束会话；主键去重使重复导入保持幂等。 */
+    fun importSessions(sessions: List<AppSession>): Int {
+        val completed = sessions.filter { it.endTime != null }
+        if (completed.isEmpty()) return 0
+        synchronized(STORAGE_LOCK) {
+            val before = sessionDao.getAll().size
+            sessionDao.insertIfMissing(completed.map(SessionEntity::fromDomain))
+            return sessionDao.getAll().size - before
         }
-        return arr.toString()
+    }
+
+    private fun migrateLegacySessionsOnce() {
+        synchronized(STORAGE_LOCK) {
+            if (prefs.getBoolean(KEY_ROOM_MIGRATED, false)) return
+            val raw = prefs.getString(KEY_SESSIONS, null)
+            val legacySessions = raw?.let {
+                try { deserialize(it) } catch (_: Exception) { emptyList() }
+            }.orEmpty()
+            if (legacySessions.isNotEmpty()) {
+                sessionDao.insertIfMissing(legacySessions.map(SessionEntity::fromDomain))
+            }
+            // Keep the legacy JSON for the 1.4.8 bridge downgrade path. Room is authoritative.
+            prefs.edit().putBoolean(KEY_ROOM_MIGRATED, true).commit()
+            if (legacySessions.isNotEmpty()) {
+                BuwanleLogger.log("ROOM_MIGRATION", "已迁移 ${legacySessions.size} 条历史记录")
+            }
+        }
     }
 
     private fun readSessions(): List<AppSession> {
-        val raw = prefs.getString(KEY_SESSIONS, null) ?: return emptyList()
-        return try {
-            deserialize(raw)
-        } catch (_: Exception) {
-            // 单条旧数据或意外中断不应让闸门、首页和复盘页一起崩溃。
-            emptyList()
-        }
+        return sessionDao.getAll().map(SessionEntity::toDomain)
     }
 
     private data class ActiveSessionState(
@@ -251,46 +246,6 @@ class SessionStorage(context: Context) {
     }
 
     private fun deserialize(raw: String): List<AppSession> {
-        val list = mutableListOf<AppSession>()
-        val arr = JSONArray(raw)
-        for (i in 0 until arr.length()) {
-            try {
-                val obj = arr.getJSONObject(i)
-                val enforced = obj.optInt("enforced", -1)
-                val intensity = try {
-                    ReminderIntensity.valueOf(obj.optString("intensity", ReminderIntensity.NORMAL.name))
-                } catch (_: Exception) {
-                    ReminderIntensity.NORMAL
-                }
-                val intent = try {
-                    IntentType.valueOf(obj.optString("intent", IntentType.UNKNOWN.name))
-                } catch (_: Exception) {
-                    IntentType.UNKNOWN
-                }
-                val moodStr = obj.optString("mood", "")
-                val mood = if (moodStr.isNotEmpty()) {
-                    try { MoodType.valueOf(moodStr) } catch (_: Exception) { null }
-                } else null
-                val end = obj.optLong("end", -1L)
-                list.add(
-                    AppSession(
-                        packageName = obj.getString("pkg"),
-                        startTime = obj.getLong("start"),
-                        endTime = if (end < 0L) null else end,
-                        subTarget = obj.optString("subTarget", "").takeIf { it.isNotEmpty() },
-                        intentType = intent,
-                        plannedDurationMinutes = obj.optInt("plan", 10).coerceAtLeast(0),
-                        enforcedDurationMinutes = if (enforced >= 0) enforced else null,
-                        reminderIntensity = intensity,
-                        doubleConfirmed = obj.optBoolean("double", false),
-                        blockedByRule = obj.optString("blocked", "").takeIf { it.isNotEmpty() },
-                        mood = mood
-                    )
-                )
-            } catch (_: Exception) {
-                // 跳过损坏的单条记录，保留其余历史。
-            }
-        }
-        return list
+        return SessionJsonCodec.decode(raw)
     }
 }

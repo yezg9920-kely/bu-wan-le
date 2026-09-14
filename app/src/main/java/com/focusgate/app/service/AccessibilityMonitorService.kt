@@ -24,7 +24,7 @@ import com.focusgate.app.intervention.GateOverlayController
 import com.focusgate.app.intervention.InterventionManager
 import com.focusgate.app.rule.ReminderIntensity
 import com.focusgate.app.util.DeepQuestionBank
-import com.focusgate.app.util.FocusGateLogger
+import com.focusgate.app.util.BuwanleLogger
 import com.focusgate.app.util.SessionStorage
 import kotlinx.coroutines.*
 import android.os.Handler
@@ -150,7 +150,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         getSharedPreferences(Constants.PREFS_NAME, MODE_PRIVATE).edit()
             .putLong(Constants.KEY_SERVICE_LAST_CONNECTED_AT, System.currentTimeMillis())
             .apply()
-        FocusGateLogger.log("SERVICE", "无障碍服务已连接，等待前台事件验证会话")
+        BuwanleLogger.log("SERVICE", "无障碍服务已连接，等待前台事件验证会话")
 
         Toast.makeText(this, "不玩了 检测服务已启动", Toast.LENGTH_SHORT).show()
     }
@@ -169,7 +169,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         val storedStartedAt = prefs.getLong(Constants.KEY_PENDING_GATE_STARTED_AT, 0L)
         if (storedStartedAt > 0L && now - storedStartedAt >= GATE_RESULT_TIMEOUT_MS) {
             clearPendingGateResult()
-            FocusGateLogger.log("GATE_RESTORE", "丢弃已超时的待确认闸门 request=$requestId")
+            BuwanleLogger.log("GATE_RESTORE", "丢弃已超时的待确认闸门 request=$requestId")
             return
         }
         val startedAt = storedStartedAt.takeIf { it > 0L } ?: now
@@ -189,7 +189,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         }
 
         val outcome = prefs.getString(Constants.KEY_PENDING_GATE_OUTCOME, null)
-        FocusGateLogger.log(
+        BuwanleLogger.log(
             "GATE_RESTORE",
             "服务重连恢复待确认闸门 target=$targetId request=$requestId outcome=$outcome"
         )
@@ -217,7 +217,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                 clearActiveSessionPrefs()
                 clearPendingGateResult()
                 leaveHandler.post { performGlobalAction(GLOBAL_ACTION_HOME) }
-                FocusGateLogger.log("GATE_RESTORE", "恢复后的闸门等待超时，已关闭")
+                BuwanleLogger.log("GATE_RESTORE", "恢复后的闸门等待超时，已关闭")
             }
         }
     }
@@ -266,9 +266,9 @@ class AccessibilityMonitorService : AccessibilityService() {
             } else {
                 startForeground(GUARD_NOTIFICATION_ID, notification)
             }
-            FocusGateLogger.log("SERVICE", "已进入 specialUse 前台守护模式")
+            BuwanleLogger.log("SERVICE", "已进入 specialUse 前台守护模式")
         } catch (e: Exception) {
-            FocusGateLogger.log(
+            BuwanleLogger.log(
                 "SERVICE",
                 "前台守护启动失败，继续使用无障碍服务: ${e.javaClass.simpleName}: ${e.message}"
             )
@@ -290,7 +290,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         // 防御性修复：系统 UI 弹窗（通知栏、快捷设置等）不应干扰离开检测
         if (GateEventPolicy.shouldIgnoreSystemUiEvent(packageName, className)) {
             if (!isContentChange) {
-                FocusGateLogger.log("EVENT", "忽略系统UI事件 pkg=$packageName last=${lastForegroundTarget?.targetId} session=${currentSession?.let { it.packageName + (it.subTarget?.let { s -> "#$s" } ?: "") }}")
+                BuwanleLogger.log("EVENT", "忽略系统UI事件 pkg=$packageName last=${lastForegroundTarget?.targetId} session=${currentSession?.let { it.packageName + (it.subTarget?.let { s -> "#$s" } ?: "") }}")
             }
             return
         }
@@ -298,7 +298,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         // Gate / 提醒 / 复盘页面属于干预流程的一部分，不能被当成“离开目标应用”。
         if (packageName == applicationContext.packageName) {
             if (!isContentChange) {
-                FocusGateLogger.log("EVENT", "忽略本应用窗口事件 class=$className")
+                BuwanleLogger.log("EVENT", "忽略本应用窗口事件 class=$className")
             }
             return
         }
@@ -322,12 +322,12 @@ class AccessibilityMonitorService : AccessibilityService() {
             lastHeartbeatTarget = heartbeatTarget
         }
         if (!isContentChange) {
-            FocusGateLogger.log("EVENT", "pkg=$packageName class=$className resolved=${resolvedTarget?.targetId} last=${lastForegroundTarget?.targetId} session=${currentSession?.let { it.packageName + (it.subTarget?.let { s -> "#$s" } ?: "") }}")
+            BuwanleLogger.log("EVENT", "pkg=$packageName class=$className resolved=${resolvedTarget?.targetId} last=${lastForegroundTarget?.targetId} session=${currentSession?.let { it.packageName + (it.subTarget?.let { s -> "#$s" } ?: "") }}")
         }
 
         // 调试：记录所有微信窗口事件，帮助确认视频号 Activity 类名
         if (packageName == "com.tencent.mm" && className != null) {
-            FocusGateLogger.log("WECHAT", "窗口变化: $className")
+            BuwanleLogger.log("WECHAT", "窗口变化: $className")
         }
 
         // 读取冷却时间（支持跨组件同步，防止 Gate 确认后重开反复触发）
@@ -342,7 +342,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             val sub = if (syncedLastForeground.contains("#")) syncedLastForeground.substringAfter("#") else null
             lastForegroundTarget = ResolvedTarget(realPkg, sub)
             prefs.edit().remove(Constants.KEY_LAST_FOREGROUND_APP).apply()
-            FocusGateLogger.log("SYNC", "lastForegroundTarget 同步为 ${lastForegroundTarget?.targetId}")
+            BuwanleLogger.log("SYNC", "lastForegroundTarget 同步为 ${lastForegroundTarget?.targetId}")
         }
 
         // Gate 期间会先回桌面再显示拦截页；这些窗口变化都不能结束待确认会话。
@@ -366,7 +366,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             ) {
                 lastPendingGateRetryAt = now
                 val recovered = gateOverlayController.show(resolvedTarget.targetId, activePendingGateId)
-                FocusGateLogger.log(
+                BuwanleLogger.log(
                     "GATE_RECOVER",
                     "待确认闸门表面丢失，事件触发重建=$recovered target=${resolvedTarget.targetId}"
                 )
@@ -375,7 +375,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                 }
             } else {
                 if (!isContentChange) {
-                    FocusGateLogger.log(
+                    BuwanleLogger.log(
                         "GATE",
                         "闸门等待结果中，surfaceVisible=$surfaceVisible，忽略前台变化: $packageName"
                     )
@@ -396,7 +396,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             pendingLeaveRunnable?.let {
                 leaveHandler.removeCallbacks(it)
                 pendingLeaveRunnable = null
-                FocusGateLogger.log("LEAVE", "取消延迟离开: 回到了 $sessionTargetId")
+                BuwanleLogger.log("LEAVE", "取消延迟离开: 回到了 $sessionTargetId")
             }
         }
 
@@ -411,7 +411,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         if (currentSession != null && resolvedTarget == null) {
             if (pendingLeaveRunnable == null) {
                 val previousTargetId = lastTarget?.targetId ?: sessionTargetId
-                FocusGateLogger.log("LEAVE", "可能离开，延迟${LEAVE_DEBOUNCE_MS}ms确认: last=$previousTargetId -> now=$packageName")
+                BuwanleLogger.log("LEAVE", "可能离开，延迟${LEAVE_DEBOUNCE_MS}ms确认: last=$previousTargetId -> now=$packageName")
                 val expectedTargetId = sessionTargetId
                 val runnable = Runnable {
                     if (currentSessionTargetId() == expectedTargetId) {
@@ -432,7 +432,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             }
             if (resolvedTarget.targetId == activeTargetId) {
                 if (!isContentChange) {
-                    FocusGateLogger.log("SKIP", "已有活跃会话: $activeTargetId, 跳过")
+                    BuwanleLogger.log("SKIP", "已有活跃会话: $activeTargetId, 跳过")
                 }
                 lastForegroundTarget = resolvedTarget
                 return
@@ -475,7 +475,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                         currentSession = restored
                         lastForegroundTarget = resolvedTarget
                         sessionStorage.repairStaleOpenSessions(now)
-                        FocusGateLogger.log("RECOVER", "按原截止时间恢复会话，跳过闸门: $currentTargetId")
+                        BuwanleLogger.log("RECOVER", "按原截止时间恢复会话，跳过闸门: $currentTargetId")
                         if (reminderJobRef.get() == null || reminderJobRef.get()?.isActive != true) {
                             startReminder(restored)
                         }
@@ -484,7 +484,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                         clearActiveSessionPrefs()
                         clearGateBlock()
                         sessionStorage.repairStaleOpenSessions(now)
-                        FocusGateLogger.log(
+                        BuwanleLogger.log(
                             "RECOVER",
                             "结束不可恢复会话: saved=$savedPkg current=${currentTargetId ?: packageName} " +
                                 "elapsed=${now - savedStart}ms selected=${savedDuration}min"
@@ -494,7 +494,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                     clearActiveSessionPrefs()
                     clearGateBlock()
                     sessionStorage.repairStaleOpenSessions(now)
-                    FocusGateLogger.log("RECOVER", "持久化会话无效，已清理: ${e.message}")
+                    BuwanleLogger.log("RECOVER", "持久化会话无效，已清理: ${e.message}")
                 }
             }
         }
@@ -505,7 +505,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             val gateBlockedUntil = prefs.getLong(Constants.KEY_GATE_BLOCKED_UNTIL, 0)
             val gateBlockedTarget = prefs.getString(Constants.KEY_GATE_BLOCKED_TARGET, null)
             if (now < gateBlockedUntil && gateBlockedTarget == resolvedTarget.targetId) {
-                FocusGateLogger.log("GATE_BLOCK", "清除无活跃会话对应的旧封锁: ${resolvedTarget.targetId}")
+                BuwanleLogger.log("GATE_BLOCK", "清除无活跃会话对应的旧封锁: ${resolvedTarget.targetId}")
                 clearGateBlock()
             }
         }
@@ -529,12 +529,12 @@ class AccessibilityMonitorService : AccessibilityService() {
                 elapsedMs = elapsedSinceLastGate,
                 cooldownMs = COOLDOWN_MS
             )
-            FocusGateLogger.log("GATE_CHECK", "target=${resolvedTarget.targetId} cooldown=${cooldown}(${elapsedSinceLastGate}ms/${COOLDOWN_MS}ms)")
+            BuwanleLogger.log("GATE_CHECK", "target=${resolvedTarget.targetId} cooldown=${cooldown}(${elapsedSinceLastGate}ms/${COOLDOWN_MS}ms)")
             if (!cooldown) {
-                FocusGateLogger.log("GATE", "触发闸门 target=${resolvedTarget.targetId}")
+                BuwanleLogger.log("GATE", "触发闸门 target=${resolvedTarget.targetId}")
                 triggerGate(resolvedTarget, now)
             } else {
-                FocusGateLogger.log("GATE", "冷却中跳过 target=${resolvedTarget.targetId}")
+                BuwanleLogger.log("GATE", "冷却中跳过 target=${resolvedTarget.targetId}")
             }
         }
 
@@ -601,13 +601,13 @@ class AccessibilityMonitorService : AccessibilityService() {
             subTarget = target.subTarget
         )
 
-        FocusGateLogger.log("TRIGGER", "triggerGate target=${target.targetId} sessionStart=${currentSession!!.startTime}")
+        BuwanleLogger.log("TRIGGER", "triggerGate target=${target.targetId} sessionStart=${currentSession!!.startTime}")
 
         // 首选无障碍专用全屏覆盖层。它直接盖在目标应用之上，不依赖后台启动 Activity，
         // 因而不会被 Android/HyperOS 的后台弹出限制拦截。
         val overlayShown = gateOverlayController.show(target.targetId, requestId)
         if (overlayShown) {
-            FocusGateLogger.log("TRIGGER", "首次闸门已使用 TYPE_ACCESSIBILITY_OVERLAY 显示")
+            BuwanleLogger.log("TRIGGER", "首次闸门已使用 TYPE_ACCESSIBILITY_OVERLAY 显示")
 
             // 覆盖层先显示，再在后台加载大型问题库。部分 HyperOS/ART 设备首次
             // 校验 DeepQuestionBank 会卡住几十秒，绝不能让它阻塞无障碍主线程。
@@ -617,7 +617,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                     val question = DeepQuestionBank.randomAny()
                     gateOverlayController.updateDeepQuestion(requestId, question)
                 } catch (e: Exception) {
-                    FocusGateLogger.log(
+                    BuwanleLogger.log(
                         "QUESTION_BANK",
                         "后台准备问题失败，保留即时占位问题: ${e.javaClass.simpleName}: ${e.message}"
                     )
@@ -642,9 +642,9 @@ class AccessibilityMonitorService : AccessibilityService() {
                 }
                 try {
                     startActivity(intent)
-                    FocusGateLogger.log("TRIGGER", "回退 GateActivity startActivity 成功")
+                    BuwanleLogger.log("TRIGGER", "回退 GateActivity startActivity 成功")
                 } catch (e: Exception) {
-                    FocusGateLogger.log("TRIGGER", "回退 GateActivity 启动失败: ${e.message}")
+                    BuwanleLogger.log("TRIGGER", "回退 GateActivity 启动失败: ${e.message}")
                     Toast.makeText(
                         this@AccessibilityMonitorService,
                         "拦截层启动失败，请重新开启无障碍服务",
@@ -674,9 +674,9 @@ class AccessibilityMonitorService : AccessibilityService() {
                     }
                 }
                 if (recovered == null) {
-                    FocusGateLogger.log("GATE_RECOVER", "结果已提交，取消排队中的覆盖层重建 request=$requestId")
+                    BuwanleLogger.log("GATE_RECOVER", "结果已提交，取消排队中的覆盖层重建 request=$requestId")
                 } else {
-                    FocusGateLogger.log(
+                    BuwanleLogger.log(
                         "GATE_RECOVER",
                         "闸门可见性校验失败，覆盖层重试=$recovered target=${target.targetId}"
                     )
@@ -704,7 +704,7 @@ class AccessibilityMonitorService : AccessibilityService() {
                 pendingGateStartedAt = 0L
                 clearPendingGateResult()
                 leaveHandler.post { performGlobalAction(GLOBAL_ACTION_HOME) }
-                FocusGateLogger.log("TRIGGER", "Gate 5分钟未确认，关闭覆盖层并回到桌面")
+                BuwanleLogger.log("TRIGGER", "Gate 5分钟未确认，关闭覆盖层并回到桌面")
             }
         }
     }
@@ -718,7 +718,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             Constants.GATE_OUTCOME_BLOCKED,
             Constants.GATE_OUTCOME_CANCELLED -> {
                 val outcome = prefs.getString(Constants.KEY_PENDING_GATE_OUTCOME, null)
-                FocusGateLogger.log("CONFIRM", "闸门未继续 outcome=$outcome request=$requestId")
+                BuwanleLogger.log("CONFIRM", "闸门未继续 outcome=$outcome request=$requestId")
                 // 冷却必须从用户作出选择时开始，而不是从 15 秒倒计时开始。
                 // 否则取消后目标 App 的残留窗口事件会立刻再次弹出同一闸门。
                 refreshGateCooldown(System.currentTimeMillis())
@@ -770,8 +770,8 @@ class AccessibilityMonitorService : AccessibilityService() {
 
             // 必须在重置开始时间之后保存，否则历史统计会把 15 秒闸门等待算入使用时长。
             sessionStorage.saveSession(session)
-            FocusGateLogger.log("CONFIRM", "用户确认: pkg=${session.packageName} planned=$minutes enforced=${session.enforcedDurationMinutes} intensity=$intensity")
-            FocusGateLogger.log("TIMER", "计时基准重置: confirmTime=$confirmTime (Gate等待了 ${gateWaitMs}ms)")
+            BuwanleLogger.log("CONFIRM", "用户确认: pkg=${session.packageName} planned=$minutes enforced=${session.enforcedDurationMinutes} intensity=$intensity")
+            BuwanleLogger.log("TIMER", "计时基准重置: confirmTime=$confirmTime (Gate等待了 ${gateWaitMs}ms)")
 
             pendingGateId = null
             pendingGateStartedAt = 0L
@@ -797,14 +797,14 @@ class AccessibilityMonitorService : AccessibilityService() {
         // 若从当前时刻重新计整段时长，服务重启或延长会话都会让计时严重偏长。
         val timerStartMs = session.startTime
         val reminderOffsetMs = SessionTiming.reminderOffsetsMs(effectiveMinutes).single()
-        FocusGateLogger.log("REMINDER", "启动单次计时器: pkg=$pkg selected=${effectiveMinutes}min timerStartMs=$timerStartMs")
+        BuwanleLogger.log("REMINDER", "启动单次计时器: pkg=$pkg selected=${effectiveMinutes}min timerStartMs=$timerStartMs")
 
         val newJob = serviceScope.launch {
             delayUntil(timerStartMs, reminderOffsetMs)
             // 到点恰好遇到通知、小窗或系统跳转时，lastForegroundTarget 会短暂为空。
             // 单次计时器不能因此永久漏掉提醒；等待离开防抖得出最终结论后再决定。
             val currentAndForeground = awaitCurrentSessionForeground(session)
-            FocusGateLogger.log(
+            BuwanleLogger.log(
                 "REMINDER",
                 "所选时间到: selected=${effectiveMinutes}min isActive=$isActive currentAndForeground=$currentAndForeground"
             )
@@ -829,11 +829,11 @@ class AccessibilityMonitorService : AccessibilityService() {
         val now = System.currentTimeMillis()
         val elapsed = now - sessionStartMs
         val remaining = SessionTiming.checkpointRemainingMs(sessionStartMs, targetMs, now)
-        FocusGateLogger.log("DELAY", "delayUntil: now=$now start=$sessionStartMs elapsed=${elapsed}ms target=${targetMs}ms remaining=${remaining}ms")
+        BuwanleLogger.log("DELAY", "delayUntil: now=$now start=$sessionStartMs elapsed=${elapsed}ms target=${targetMs}ms remaining=${remaining}ms")
         if (remaining > 0) {
             delay(remaining)
         } else {
-            FocusGateLogger.log("DELAY", "delayUntil: remaining<=0, 立即返回")
+            BuwanleLogger.log("DELAY", "delayUntil: remaining<=0, 立即返回")
         }
     }
 
@@ -862,7 +862,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         val question = try {
             DeepQuestionBank.randomTimeout()
         } catch (e: Exception) {
-            FocusGateLogger.log("REMINDER", "超时问题生成失败，使用备用文案: ${e.message}")
+            BuwanleLogger.log("REMINDER", "超时问题生成失败，使用备用文案: ${e.message}")
             "现在继续刷，真的比你原本要做的事更重要吗？"
         }
         val overlayShown = withContext(Dispatchers.Main.immediate) {
@@ -883,9 +883,9 @@ class AccessibilityMonitorService : AccessibilityService() {
                 }
                 try {
                     startActivity(intent)
-                    FocusGateLogger.log("REMINDER", "覆盖层失败，已启动全屏提醒备用页面")
+                    BuwanleLogger.log("REMINDER", "覆盖层失败，已启动全屏提醒备用页面")
                 } catch (e: Exception) {
-                    FocusGateLogger.log(
+                    BuwanleLogger.log(
                         "REMINDER",
                         "覆盖层和备用页面均启动失败: ${e.javaClass.simpleName}: ${e.message}"
                     )
@@ -979,7 +979,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             .putLong(Constants.KEY_GATE_BLOCKED_UNTIL, blockedUntil)
             .putString(Constants.KEY_GATE_BLOCKED_TARGET, targetId)
             .apply()
-        FocusGateLogger.log("GATE_BLOCK", "闸门封锁至: $blockedUntil target=$targetId (时长${session.effectiveDurationMinutes}min+缓冲${GATE_BLOCK_BUFFER_MINUTES}min)")
+        BuwanleLogger.log("GATE_BLOCK", "闸门封锁至: $blockedUntil target=$targetId (时长${session.effectiveDurationMinutes}min+缓冲${GATE_BLOCK_BUFFER_MINUTES}min)")
     }
 
     /** 清除闸门封锁期（会话正常结束时调用） */
@@ -1017,7 +1017,7 @@ class AccessibilityMonitorService : AccessibilityService() {
         interventionManager.dismissNotifications()
         pendingLeaveRunnable?.let { leaveHandler.removeCallbacks(it) }
         pendingLeaveRunnable = null
-        FocusGateLogger.log("LEAVE", "$reason: ${session.packageName}#${session.subTarget}")
+        BuwanleLogger.log("LEAVE", "$reason: ${session.packageName}#${session.subTarget}")
     }
 
     private fun isGateSurfaceVisible(requestId: String): Boolean {
@@ -1046,7 +1046,7 @@ class AccessibilityMonitorService : AccessibilityService() {
             .remove(Constants.KEY_LAST_GATE_TARGET)
             .apply()
         lastGateTargetId = null
-        FocusGateLogger.log("GATE_RECOVER", "$reason；已解除 pending，允许下一次事件重试")
+        BuwanleLogger.log("GATE_RECOVER", "$reason；已解除 pending，允许下一次事件重试")
         leaveHandler.post {
             Toast.makeText(this, "拦截层未显示，已自动恢复；请重新打开目标应用", Toast.LENGTH_LONG).show()
         }

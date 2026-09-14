@@ -1,6 +1,6 @@
 # 参与贡献
 
-感谢你愿意帮助改进“不玩了（FocusGate）”。
+感谢你愿意帮助改进“不玩了”。
 
 ## 提交问题
 
@@ -21,9 +21,9 @@
 3. 提交前执行：
 
 ```bash
-./gradlew testDebugUnitTest lintDebug assembleDebug
+./gradlew testCommunityDebugUnitTest testLegacyBridgeDebugUnitTest lintCommunityDebug assembleCommunityDebug assembleLegacyBridgeDebug
 ```
 
 4. 在 Pull Request 中说明问题、实现方式、测试结果和兼容性影响。
 
-贡献代码即表示你有权提交这些内容，并同意按本仓库的 GPL-3.0 许可证发布。请勿提交签名密钥、服务令牌、真实用户数据或第三方闭源代码。
+首次提交 Pull Request 前需阅读并签署 [CLA.md](CLA.md)。贡献代码仍会在本仓库按 GPL-3.0 发布；CLA 同时允许项目维护者在商业版中使用贡献，避免社区版与商业版无法同步修复。请勿提交签名密钥、服务令牌、真实用户数据或第三方闭源代码。

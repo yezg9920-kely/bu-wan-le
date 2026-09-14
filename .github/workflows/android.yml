@@ -27,11 +27,21 @@ jobs:
         run: chmod +x gradlew
 
       - name: Test, lint, and build
-        run: ./gradlew testDebugUnitTest lintDebug assembleDebug --stacktrace
+        run: >-
+          ./gradlew
+          testCommunityDebugUnitTest
+          testLegacyBridgeDebugUnitTest
+          lintCommunityDebug
+          lintLegacyBridgeDebug
+          assembleCommunityDebug
+          assembleLegacyBridgeDebug
+          --stacktrace
 
-      - name: Upload debug APK
+      - name: Upload test APKs
         uses: actions/upload-artifact@v7
         with:
-          name: bu-wan-le-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: bu-wan-le-test-apks
+          path: |
+            app/build/outputs/apk/community/debug/app-community-debug.apk
+            app/build/outputs/apk/legacyBridge/debug/app-legacyBridge-debug.apk
           if-no-files-found: error

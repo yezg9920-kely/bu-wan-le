@@ -3,23 +3,65 @@ package com.focusgate.app
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.InputType
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.focusgate.app.backup.DataArchiveManager
 import com.focusgate.app.databinding.ActivityMainBinding
 import com.focusgate.app.intervention.InterventionManager
+import com.focusgate.app.legal.ConsentManager
 import com.focusgate.app.service.AccessibilityMonitorService
-import com.focusgate.app.util.FocusGateLogger
+import com.focusgate.app.util.BuwanleLogger
 import com.focusgate.app.util.HyperOSHelper
 import com.focusgate.app.util.SessionStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var sessionStorage: SessionStorage
+    private lateinit var consentManager: ConsentManager
+    private lateinit var archiveManager: DataArchiveManager
+    private var pendingExportPassphrase: CharArray? = null
+    private var privacyDialogVisible = false
+
+    private val exportLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        val passphrase = pendingExportPassphrase
+        pendingExportPassphrase = null
+        if (uri == null || passphrase == null) {
+            passphrase?.fill('\u0000')
+            return@registerForActivityResult
+        }
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) { archiveManager.exportTo(uri, passphrase) }
+            result.onSuccess { count ->
+                Toast.makeText(this@MainActivity, "已加密导出 $count 条记录", Toast.LENGTH_LONG).show()
+            }.onFailure { error ->
+                Toast.makeText(this@MainActivity, "导出失败：${error.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private val importLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) showImportPasswordDialog(uri)
+    }
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -34,9 +76,15 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         sessionStorage = SessionStorage(this)
-        requestNotificationPermissionIfNeeded()
+        consentManager = ConsentManager(this)
+        archiveManager = DataArchiveManager(this)
         updateUI()
         setupListeners()
+        if (consentManager.hasAcceptedPrivacy()) {
+            requestNotificationPermissionIfNeeded()
+        } else {
+            showFirstRunPrivacyConsent()
+        }
     }
 
     private fun requestNotificationPermissionIfNeeded() {
@@ -51,11 +99,17 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateUI()
+        if (::consentManager.isInitialized &&
+            !consentManager.hasAcceptedPrivacy() &&
+            !privacyDialogVisible
+        ) {
+            showFirstRunPrivacyConsent()
+        }
     }
 
     private fun setupListeners() {
         binding.btnOpenAccessibility.setOnClickListener {
-            AccessibilityMonitorService.openAccessibilitySettings(this)
+            showAccessibilityDisclosureIfNeeded()
         }
 
         binding.btnRequestOverlay.setOnClickListener {
@@ -82,6 +136,13 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, HistoryReviewActivity::class.java))
         }
 
+        binding.btnExportData.setOnClickListener { showExportPasswordDialog() }
+        binding.btnImportData.setOnClickListener {
+            importLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*"))
+        }
+        binding.btnPrivacy.setOnClickListener { openLegalDocument(LegalActivity.DOCUMENT_PRIVACY) }
+        binding.btnTerms.setOnClickListener { openLegalDocument(LegalActivity.DOCUMENT_TERMS) }
+
         binding.btnClearData.setOnClickListener {
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("确认清空历史？")
@@ -101,7 +162,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLogPreviewDialog() {
-        val allLogs = FocusGateLogger.getLogs()
+        val allLogs = BuwanleLogger.getLogs()
         val lines = allLogs.lines()
         val preview = lines.takeLast(50).joinToString("\n")
         val title = "运行日志 (最近 ${lines.size.coerceAtMost(50)} / ${lines.size} 行)"
@@ -111,12 +172,12 @@ class MainActivity : AppCompatActivity() {
             .setMessage(preview.ifEmpty { "暂无日志" })
             .setPositiveButton("复制") { _, _ ->
                 val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("FocusGate Logs", allLogs))
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("不玩了运行日志", allLogs))
                 Toast.makeText(this, "日志已复制到剪贴板 (${lines.size} 行)", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("关闭", null)
             .setNeutralButton("清空") { _, _ ->
-                FocusGateLogger.clear()
+                BuwanleLogger.clear()
                 Toast.makeText(this, "日志已清空", Toast.LENGTH_SHORT).show()
                 updateUI()
             }
@@ -124,6 +185,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUI() {
+        binding.tvVersion.text = "短视频自控与专注 · ${BuildConfig.VERSION_NAME} · ${BuildConfig.EDITION}"
         val isAccessibilityEnabled = AccessibilityMonitorService.isEnabled(this)
         val isAccessibilityRunning = AccessibilityMonitorService.isServiceRunning()
         val hasOverlay = InterventionManager.canDrawOverlays(this)
@@ -157,7 +219,7 @@ class MainActivity : AppCompatActivity() {
                 "系统设置显示已授权，但检测服务没有连接。请关闭后重新开启无障碍权限，并检查 HyperOS 自启动和省电限制。"
             binding.tvAccessibilityHint.setTextColor(getColor(android.R.color.holo_orange_dark))
         } else {
-            binding.tvAccessibilityHint.text = "点击上方按钮，在系统设置中找到 FocusGate 并开启"
+            binding.tvAccessibilityHint.text = "点击上方按钮，阅读用途说明后在系统设置中找到“不玩了”并开启"
             binding.tvAccessibilityHint.setTextColor(getColor(android.R.color.holo_red_dark))
         }
 
@@ -214,6 +276,129 @@ class MainActivity : AppCompatActivity() {
             appendLine("夜间打开: ${nightCount} 次")
         }
         binding.tvRuleStats.text = ruleText
+    }
+
+    private fun showFirstRunPrivacyConsent() {
+        privacyDialogVisible = true
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("欢迎使用不玩了")
+            .setMessage(
+                "社区版所有使用记录只保存在本机，不联网、无广告。应用需要在你授权后通过无障碍服务检测选定应用的切换，但不会读取文字、输入内容或截图。\n\n请先阅读并同意隐私政策与用户协议。"
+            )
+            .setCancelable(false)
+            .setPositiveButton("同意并继续") { _, _ ->
+                consentManager.acceptPrivacy()
+                requestNotificationPermissionIfNeeded()
+            }
+            .setNegativeButton("暂不同意") { _, _ -> finish() }
+            .setNeutralButton("查看隐私政策") { _, _ ->
+                openLegalDocument(LegalActivity.DOCUMENT_PRIVACY)
+            }
+            .create()
+            .also { dialog ->
+                dialog.setOnDismissListener { privacyDialogVisible = false }
+                dialog.show()
+            }
+    }
+
+    private fun showAccessibilityDisclosureIfNeeded() {
+        if (consentManager.hasAcceptedAccessibilityDisclosure()) {
+            AccessibilityMonitorService.openAccessibilitySettings(this)
+            return
+        }
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("开启前请确认无障碍用途")
+            .setMessage(
+                "为了在你打开选定的短视频应用时及时显示停顿和到时提醒，不玩了需要检测前台应用包名及窗口切换。\n\n不会读取聊天、密码、页面文字或输入内容，不会截图，也不会执行点击手势。拒绝后将无法自动拦截，但仍可查看本地历史。"
+            )
+            .setPositiveButton("我已了解，去开启") { _, _ ->
+                consentManager.acceptAccessibilityDisclosure()
+                AccessibilityMonitorService.openAccessibilitySettings(this)
+            }
+            .setNegativeButton("暂不开启", null)
+            .show()
+    }
+
+    private fun openLegalDocument(document: String) {
+        startActivity(Intent(this, LegalActivity::class.java).putExtra(LegalActivity.EXTRA_DOCUMENT, document))
+    }
+
+    private fun showExportPasswordDialog() {
+        val password = passwordField("设置至少8位备份口令")
+        val confirm = passwordField("再次输入口令")
+        val container = passwordContainer(password, confirm)
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("加密导出")
+            .setMessage("口令不会上传；忘记后无法恢复备份。")
+            .setView(container)
+            .setPositiveButton("选择保存位置", null)
+            .setNegativeButton("取消", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val first = password.text.toString()
+                if (first.length < 8) {
+                    password.error = "至少8个字符"
+                } else if (first != confirm.text.toString()) {
+                    confirm.error = "两次口令不一致"
+                } else {
+                    pendingExportPassphrase = first.toCharArray()
+                    dialog.dismiss()
+                    val timestamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())
+                    exportLauncher.launch("不玩了-备份-$timestamp.bwl")
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun showImportPasswordDialog(uri: Uri) {
+        val password = passwordField("输入备份口令")
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("导入加密备份")
+            .setView(password)
+            .setPositiveButton("导入", null)
+            .setNegativeButton("取消", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                if (password.text.length < 8) {
+                    password.error = "至少8个字符"
+                    return@setOnClickListener
+                }
+                val passphrase = password.text.toString().toCharArray()
+                dialog.dismiss()
+                lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        archiveManager.importFrom(uri, passphrase)
+                    }
+                    result.onSuccess { imported ->
+                        Toast.makeText(
+                            this@MainActivity,
+                            "导入完成：新增 ${imported.importedSessions} 条记录，恢复 ${imported.importedManagedApps} 个应用设置",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        updateUI()
+                    }.onFailure { error ->
+                        Toast.makeText(this@MainActivity, "导入失败：${error.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun passwordField(hint: String): EditText = EditText(this).apply {
+        this.hint = hint
+        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        setPadding(16, 12, 16, 12)
+    }
+
+    private fun passwordContainer(vararg fields: EditText): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        val horizontalPadding = (20 * resources.displayMetrics.density).toInt()
+        setPadding(horizontalPadding, 8, horizontalPadding, 0)
+        fields.forEach(::addView)
     }
 
     private fun getAppDisplayName(targetId: String): String = when {

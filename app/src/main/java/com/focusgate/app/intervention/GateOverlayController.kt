@@ -25,7 +25,7 @@ import com.focusgate.app.rule.RuleContext
 import com.focusgate.app.rule.RuleEngine
 import com.focusgate.app.rule.RuleResult
 import com.focusgate.app.util.DeepQuestionBank
-import com.focusgate.app.util.FocusGateLogger
+import com.focusgate.app.util.BuwanleLogger
 import com.focusgate.app.util.SessionStorage
 
 /**
@@ -62,7 +62,7 @@ class GateOverlayController(
     /** 必须从主线程调用。返回 false 时由 Service 回退到 GateActivity。 */
     fun show(newTargetId: String, requestId: String): Boolean {
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            FocusGateLogger.log("GATE_OVERLAY", "拒绝在非主线程创建无障碍覆盖层")
+            BuwanleLogger.log("GATE_OVERLAY", "拒绝在非主线程创建无障碍覆盖层")
             return false
         }
 
@@ -74,7 +74,7 @@ class GateOverlayController(
         selectedMinutes = 10
         pendingRuleResult = null
 
-        val themedContext = ContextThemeWrapper(service, R.style.Theme_FocusGate_Gate)
+        val themedContext = ContextThemeWrapper(service, R.style.Theme_Buwanle_Gate)
         val newBinding = ActivityGateBinding.inflate(LayoutInflater.from(themedContext))
         configureUi(newBinding)
 
@@ -105,7 +105,7 @@ class GateOverlayController(
                 override fun onViewDetachedFromWindow(view: View) {
                     if (attachedRequestId == requestId) {
                         attachedRequestId = null
-                        FocusGateLogger.log(
+                        BuwanleLogger.log(
                             "GATE_OVERLAY",
                             "覆盖层被系统移除 target=$newTargetId request=$requestId"
                         )
@@ -119,7 +119,7 @@ class GateOverlayController(
             newBinding.root.requestFocus()
             newBinding.root.bringToFront()
             startCountdown(newBinding)
-            FocusGateLogger.log(
+            BuwanleLogger.log(
                 "GATE_OVERLAY",
                 "TYPE_ACCESSIBILITY_OVERLAY 已覆盖 target=$newTargetId request=$requestId"
             )
@@ -131,7 +131,7 @@ class GateOverlayController(
             currentRequestId = null
             attachedRequestId = null
             targetId = null
-            FocusGateLogger.log(
+            BuwanleLogger.log(
                 "GATE_OVERLAY",
                 "无障碍覆盖层创建失败，准备回退 Activity: ${e.javaClass.simpleName}: ${e.message}"
             )
@@ -326,7 +326,7 @@ class GateOverlayController(
 
         // 目标应用从未被送回后台；移除覆盖层后即可继续，不需要再次启动目标 Activity。
         dismiss(requestId)
-        FocusGateLogger.log("GATE_OVERLAY", "用户确认，移除覆盖层 target=$currentTargetId")
+        BuwanleLogger.log("GATE_OVERLAY", "用户确认，移除覆盖层 target=$currentTargetId")
     }
 
     private fun publishSimpleOutcome(requestId: String, outcome: String): Boolean {

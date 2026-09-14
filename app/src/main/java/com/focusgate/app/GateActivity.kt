@@ -141,7 +141,7 @@ class GateActivity : AppCompatActivity() {
             finish()
         }
 
-        Toast.makeText(this, "FocusGate 拦截界面已弹出", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "不玩了提醒已显示", Toast.LENGTH_SHORT).show()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

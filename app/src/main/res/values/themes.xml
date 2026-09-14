@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.FocusGate" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.Buwanle" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -10,13 +10,13 @@
     </style>
 
     <!-- Gate 拦截界面：全屏不透明，完全遮挡后面的应用 -->
-    <style name="Theme.FocusGate.Gate" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.Buwanle.Gate" parent="Theme.Material3.Light.NoActionBar">
         <item name="android:windowIsTranslucent">false</item>
         <item name="android:windowBackground">@android:color/white</item>
         <item name="android:windowFullscreen">true</item>
     </style>
 
-    <style name="Theme.FocusGate.Dialog" parent="Theme.Material3.Light.Dialog">
+    <style name="Theme.Buwanle.Dialog" parent="Theme.Material3.Light.Dialog">
         <item name="android:windowMinWidthMajor">85%</item>
         <item name="android:windowMinWidthMinor">85%</item>
         <item name="android:windowBackground">?attr/colorSurface</item>

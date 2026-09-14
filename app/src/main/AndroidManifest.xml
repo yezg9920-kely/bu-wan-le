@@ -8,13 +8,13 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
-        android:name=".FocusGateApp"
+        android:name=".BuwanleApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.FocusGate">
+        android:theme="@style/Theme.Buwanle">
 
         <activity
             android:name=".MainActivity"
@@ -30,26 +30,26 @@
             android:name=".GateActivity"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
-            android:taskAffinity="com.focusgate.gate"
+            android:taskAffinity="${applicationId}.gate"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
-            android:theme="@style/Theme.FocusGate.Gate" />
+            android:theme="@style/Theme.Buwanle.Gate" />
 
         <activity
             android:name=".InterruptActivity"
             android:excludeFromRecents="true"
             android:launchMode="singleInstance"
-            android:taskAffinity="com.focusgate.interrupt"
+            android:taskAffinity="${applicationId}.interrupt"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
-            android:theme="@style/Theme.FocusGate.Gate" />
+            android:theme="@style/Theme.Buwanle.Gate" />
 
         <activity
             android:name=".dialog.ReminderDialogActivity"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
-            android:taskAffinity="com.focusgate.dialog"
-            android:theme="@style/Theme.FocusGate.Dialog" />
+            android:taskAffinity="${applicationId}.dialog"
+            android:theme="@style/Theme.Buwanle.Dialog" />
 
         <activity
             android:name=".ReviewActivity"
@@ -57,6 +57,10 @@
 
         <activity
             android:name=".HistoryReviewActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".LegalActivity"
             android:exported="false" />
 
         <!-- 核心检测服务：AccessibilityService -->

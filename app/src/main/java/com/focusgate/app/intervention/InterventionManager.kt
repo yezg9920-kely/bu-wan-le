@@ -24,7 +24,7 @@ import androidx.core.content.ContextCompat
 import com.focusgate.app.MainActivity
 import com.focusgate.app.R
 import com.focusgate.app.dialog.ReminderDialogActivity
-import com.focusgate.app.util.FocusGateLogger
+import com.focusgate.app.util.BuwanleLogger
 
 /**
  * 干预层管理器：统一调度三档干预手段
@@ -73,7 +73,7 @@ class InterventionManager(private val context: Context) {
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
-            FocusGateLogger.log("NOTIFY", "通知权限未授予，跳过中途通知")
+            BuwanleLogger.log("NOTIFY", "通知权限未授予，跳过中途通知")
             return
         }
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -107,7 +107,7 @@ class InterventionManager(private val context: Context) {
         try {
             context.startActivity(intent)
         } catch (e: Exception) {
-            FocusGateLogger.log("DIALOG", "提醒页面启动失败: ${e.message}")
+            BuwanleLogger.log("DIALOG", "提醒页面启动失败: ${e.message}")
         }
     }
 
@@ -119,7 +119,7 @@ class InterventionManager(private val context: Context) {
     /** 显示全屏覆盖层（最重），返回窗口是否真正添加成功。 */
     fun showOverlay(@Suppress("UNUSED_PARAMETER") packageName: String, message: String): Boolean {
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            FocusGateLogger.log("OVERLAY", "覆盖层必须在主线程创建，已交由调用方回退")
+            BuwanleLogger.log("OVERLAY", "覆盖层必须在主线程创建，已交由调用方回退")
             return false
         }
         if (!canShowPriorityOverlay()) return false
@@ -139,7 +139,7 @@ class InterventionManager(private val context: Context) {
         try {
             // AccessibilityService 使用系统 DeviceDefault 主题，无法解析应用的 colorPrimary。
             // 必须显式套用应用主题后再 inflate，否则所选时间到点时会直接崩溃。
-            val themedContext = ContextThemeWrapper(context, R.style.Theme_FocusGate_Gate)
+            val themedContext = ContextThemeWrapper(context, R.style.Theme_Buwanle_Gate)
             val view = LayoutInflater.from(themedContext).inflate(R.layout.overlay_reminder, null)
             candidateView = view
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -180,7 +180,7 @@ class InterventionManager(private val context: Context) {
             windowManager = wm
             overlayView = view
             view.requestFocus()
-            FocusGateLogger.log("OVERLAY", "全屏优先覆盖层显示成功 type=$type")
+            BuwanleLogger.log("OVERLAY", "全屏优先覆盖层显示成功 type=$type")
             return true
         } catch (e: Exception) {
             candidateView?.takeIf { it.isAttachedToWindow }?.let {
@@ -188,7 +188,7 @@ class InterventionManager(private val context: Context) {
             }
             overlayView = null
             windowManager = null
-            FocusGateLogger.log(
+            BuwanleLogger.log(
                 "OVERLAY",
                 "悬浮提醒显示失败: ${e.javaClass.simpleName}: ${e.message}"
             )
@@ -219,7 +219,7 @@ class InterventionManager(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "FocusGate 干预提醒",
+                "不玩了提醒",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "刷中节奏打断提醒"
